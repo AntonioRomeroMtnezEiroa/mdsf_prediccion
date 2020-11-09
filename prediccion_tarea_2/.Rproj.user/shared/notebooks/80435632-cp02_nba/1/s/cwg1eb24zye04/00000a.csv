@@ -1,0 +1,8 @@
+"0",""
+"0","lasso    <- glmnet(nba_train_x, nba_train_y, alpha = 1.0) "
+"0","elastic1 <- glmnet(nba_train_x, nba_train_y, alpha = 0.25) "
+"0","elastic2 <- glmnet(nba_train_x, nba_train_y, alpha = 0.75) "
+"0","ridge    <- glmnet(nba_train_x, nba_train_y, alpha = 0.0)"
+"0",""
+"0","par(mfrow = c(2, 2), mar = c(6, 4, 6, 2) + 0.1)"
+"0","plot(lasso, xvar = ""lambda"", main = ""Lasso (Alpha = 1)\n\n\n"")"

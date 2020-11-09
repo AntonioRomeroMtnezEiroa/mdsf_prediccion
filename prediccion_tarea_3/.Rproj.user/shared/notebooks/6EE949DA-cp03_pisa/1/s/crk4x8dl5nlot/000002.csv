@@ -1,0 +1,4 @@
+"0",""
+"0","nba %<>% distinct(country, .keep_all = T)"
+"2","Error in eval(lhs, parent, parent) : objeto 'nba' no encontrado
+"

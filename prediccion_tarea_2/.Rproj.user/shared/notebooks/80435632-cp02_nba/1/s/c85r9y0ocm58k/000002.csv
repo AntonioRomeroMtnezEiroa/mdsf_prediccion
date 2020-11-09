@@ -1,0 +1,4 @@
+"0","#se cargan los datos"
+"0",""
+"0","nba <- read_csv(""nba.csv"")"
+"0",""

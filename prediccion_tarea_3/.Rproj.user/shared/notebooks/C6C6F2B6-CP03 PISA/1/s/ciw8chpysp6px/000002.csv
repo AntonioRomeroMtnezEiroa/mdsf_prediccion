@@ -1,0 +1,3 @@
+"0","# vemos la base de datos limpias "
+"0","view(pisa)"
+"0","attach(pisa)"

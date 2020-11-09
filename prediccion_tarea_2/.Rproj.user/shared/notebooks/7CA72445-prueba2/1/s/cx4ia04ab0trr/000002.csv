@@ -1,0 +1,18 @@
+"0","#realizamos un grafico de correlaciones, sin las variables especificadas."
+"0","categoricas <- c(""player"",""nba_country"",""tm"") "
+"0","ggcorrplot(cor(log_df %>% "
+"0","                 select_at(vars(-categoricas)), "
+"0","               use = ""complete.obs""),"
+"0","           hc.order = TRUE,"
+"0","           method = ""square"","
+"0","           type = ""lower"", "
+"0","          ggtheme = ggplot2::theme_light,"
+"0","          colors = c(""orange"", ""black"", ""blue""),"
+"0","          title = ""Matriz de correlación de variables numéricas"","
+"0","          tl.srt = 90,"
+"0","           lab = FALSE)"
+"2","Note: Using an external vector in selections is ambiguous.
+[34mi[39m Use `all_of(categoricas)` instead of `categoricas` to silence this message.
+[34mi[39m See <https://tidyselect.r-lib.org/reference/faq-external-vector.html>.
+[90mThis message is displayed once per session.[39m
+"

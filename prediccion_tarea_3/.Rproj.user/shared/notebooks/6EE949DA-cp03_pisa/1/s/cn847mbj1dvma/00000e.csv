@@ -1,0 +1,7 @@
+"0","# se comprueban los datos duplicados, no hay"
+"0",""
+"0","pisa %<>% distinct(Country, .keep_all = T)"
+"0",""
+"0","# se comprueban los datos nulos, se sustituyen por la media"
+"0",""
+"0","summarise_all(pisa, funs(sum(is.na(.))))"

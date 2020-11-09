@@ -1,0 +1,1 @@
+"0","log_df <- df %>% mutate(salary = log(salary)) #ponenmos de forma logaritmica el salario"

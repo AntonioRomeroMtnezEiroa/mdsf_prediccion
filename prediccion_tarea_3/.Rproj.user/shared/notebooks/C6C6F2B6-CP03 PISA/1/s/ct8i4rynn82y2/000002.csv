@@ -1,0 +1,3 @@
+"0","# CARGa Y VISUALIZACION DE LA BASE DE DATOS"
+"0","pisa = read.csv(""pisasci2006.csv"")"
+"0","head(pisa)"

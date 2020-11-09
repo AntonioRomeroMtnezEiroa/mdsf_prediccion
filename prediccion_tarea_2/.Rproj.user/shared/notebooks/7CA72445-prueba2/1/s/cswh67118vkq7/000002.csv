@@ -1,0 +1,8 @@
+"0","set.seed(2020) # muestreo aleatoria"
+"0","particion <- initial_split(log_df, prop = .8, strata = ""salary"") # Cogemos el 80% para hacer la fase de train"
+"0","train <- training(particion) # dataset para training"
+"0","test  <- testing(particion) #dataset para testing"
+"0","train_x <- model.matrix(salary ~ . -player -nba_country -tm, data = log_df)[, -1]"
+"0","train_y <- log_df$salary"
+"0","test_x <- model.matrix(salary ~ . -player -nba_country -tm, data = log_df)[, -1]"
+"0","test_y <- log_df$salary"

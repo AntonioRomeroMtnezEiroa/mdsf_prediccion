@@ -1,0 +1,5 @@
+"0","# se comprueba si hay datos duplicados y nulos y se eliminan."
+"0",""
+"0","nba %<>% distinct(player, .keep_all = T)"
+"0",""
+"0","summarise_all(nba, funs(sum(is.na(.))))"

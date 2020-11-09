@@ -1,0 +1,6 @@
+"0",""
+"0","# Grafico hdi"
+"0","baseplot1 <- ggplot(data = pisa, mapping = aes(x = overall, y = hdi)) +"
+"0","  layer(geom = ""point"",stat = ""identity"",position = ""identity"") +"
+"0","  theme_bw() + theme(legend.key = element_blank())"
+"0","baseplot1"

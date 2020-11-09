@@ -1,0 +1,2 @@
+"0","# limpieza de los nombres con la funcion clean_names(). por defecto es en minuscula y lo compuestos separados con _"
+"0","pisa %<>% clean_names()"

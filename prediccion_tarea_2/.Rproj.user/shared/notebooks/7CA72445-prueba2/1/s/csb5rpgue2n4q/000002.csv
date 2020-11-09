@@ -1,0 +1,6 @@
+"0","error_train   <- cv.glmnet(train_x, train_y, alpha = 1.0)"
+"0","min(error_train$cvm)"
+"1","[1]"
+"1"," 1.090843"
+"1","
+"

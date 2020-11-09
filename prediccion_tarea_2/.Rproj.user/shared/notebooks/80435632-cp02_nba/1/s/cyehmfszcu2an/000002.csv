@@ -1,0 +1,7 @@
+"0",""
+"0","cv_net   <- cv.glmnet(nba_train_x, nba_train_y, alpha = 0.2)"
+"0","min(cv_net$cvm)"
+"1","[1]"
+"1"," 0.006160654"
+"1","
+"

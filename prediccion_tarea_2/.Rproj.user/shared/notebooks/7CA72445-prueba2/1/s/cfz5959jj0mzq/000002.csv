@@ -1,0 +1,6 @@
+"0","pred <- predict(error_train, s = error_train$lambda.min, test_x)"
+"0","mean((test_y - pred)^2) #el error de la prediccion es menor que "
+"1","[1]"
+"1"," 1.057084"
+"1","
+"

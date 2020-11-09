@@ -1,0 +1,7 @@
+"0",""
+"0","pisa <- na_mean(pisa)"
+"0",""
+"0","# se simplifican los nombres de las variables"
+"0",""
+"0","pisa %<>% clean_names()   "
+"0",""

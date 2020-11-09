@@ -1,0 +1,13 @@
+"0","suppressWarnings(expr)"
+"1","function (expr) 
+"
+"1","{
+"
+"1","    enexpr(expr)
+"
+"1","}
+"
+"1","<bytecode: 0x0000028d0f014be8>
+"
+"1","<environment: namespace:rlang>
+"

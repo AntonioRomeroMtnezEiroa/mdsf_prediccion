@@ -1,0 +1,9 @@
+"0","# correlaciones "
+"0","chart.Correlation(pisa %>% "
+"0","               select_at(vars(-var_ex)),"
+"0","               histogram = TRUE, pch = 19 )"
+"2","Note: Using an external vector in selections is ambiguous.
+[34mi[39m Use `all_of(var_ex)` instead of `var_ex` to silence this message.
+[34mi[39m See <https://tidyselect.r-lib.org/reference/faq-external-vector.html>.
+[90mThis message is displayed once per session.[39m
+"

@@ -1,0 +1,6 @@
+"0",""
+"0","modelo_gam_1 <- gam(overall ~ s(interest) + s(support) + s(income) + "
+"0","                      s(health) + s(edu) + s(hdi), data = pisa)"
+"0","par(mfrow = c(2, 3))"
+"0","plot(modelo_gam, se = TRUE, col = 'blue', lwd = 2)"
+"0",""

@@ -1,0 +1,3 @@
+"0","# Eliminamos los duplicados si existen "
+"0","# utilizo una funcion que me guarde todos los paises que sean distintos"
+"0","pisa %<>% distinct(country, .keep_all = T)"
