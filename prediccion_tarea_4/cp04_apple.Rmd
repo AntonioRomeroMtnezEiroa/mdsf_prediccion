@@ -1,0 +1,255 @@
+---
+title: "Ventas Apple"
+author: "Antonio Romero Mtnez-Eiroa"
+date: "16/11/2020"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warnings = FALSE)
+```
+
+
+```{r librerias}
+
+library(tidyverse)
+library(dplyr)
+library(forecast)
+library(xts)
+library(ggplot2)
+library(ggfortify)
+
+```
+
+
+### Carga y tratamiento de datos
+
+Cargamos el dataframe con el que vamos a trabajar.
+
+```{r carga datos, echo = TRUE}
+
+rawData <- read.csv("IngresosApple.csv", sep = ";", dec = ",")
+
+rawData
+
+```
+Lo tansformamos a formato xts y zoo para trabajar con series temporales.
+
+```{r vista datos}
+
+rawIngresos <- rawData$Ingresos
+
+rawDate <- seq(as.Date("2008/04/01"), as.Date("2017/09/30"), by = "quarter")
+
+xIngresos = xts(rawIngresos,order.by = rawDate)
+
+xIngresos
+
+```
+
+```{r, echo = TRUE}
+
+xIngresos <- xts(rawData$Ingresos, order.by = rawDate)
+
+xIngresos <- to.quarterly(xIngresos)
+
+xIngresos
+
+```
+
+```{r, echo = TRUE}
+
+zIngresos = as.zoo(xIngresos$xIngresos.Close)
+
+```
+
+
+### Análisis previo
+
+Obeservamos gráficamente la evolución de los ingresos trimestrales de Apple. La gráfica muestra una tendencia claramente positiva y un aumento de la varianza en los años más recientes.
+
+```{r}
+
+df_new <- data.frame(value = as.vector(zIngresos), time = time(zIngresos))
+
+ggplot(df_new) + geom_point(aes(x = time,y = value)) + geom_line(aes(x = time,y = value)) + ylab("Ventas") +
+          ggtitle("Ingresos Trimestrales Apple") + xlab("Trimestres")
+
+```
+
+```{r} 
+
+tsIngresos = ts(coredata(zIngresos), start = c(2008, 1), frequency = 4)
+
+```
+
+A continuación se muestra también la evolución interanual de los ingresos para cada trimestre. Vemos una tedencia claramente positiva.
+
+```{r} 
+
+ggfreqplot(tsIngresos,freq = 4,nrow = 1,facet.labeller = c("1T","2T","3T","4T")) + ggtitle("Ingresos Trimestrales")
+
+```
+
+Se analizan las componentes estacional, de tendencia e irregular que afectan a la evolución. Se meustran sus valores y se grafica a continuación.
+
+```{r}
+
+stl(tsIngresos[,1], s.window = "periodic")
+
+```
+
+```{r}
+
+plot(stl(tsIngresos[,1], s.window = "periodic"))
+
+```
+
+
+### Predicción con modelo ETS
+
+```{r}
+
+cOmit = 3
+
+nObs = length(zIngresos)
+
+oIngresos <- window(zIngresos,start = index(zIngresos[1]),end = index(zIngresos[nObs - cOmit]))
+
+```
+
+
+```{r}
+
+etsfit <- ets(oIngresos)
+
+fingresos.ets = forecast(etsfit)
+
+summary(fingresos.ets)
+
+
+
+```
+
+La predicción indica que los datos siguen un modelo multiplicativo-aditivo y tiene un AIC de 703,95.
+
+```{r}
+
+plot(fingresos.ets)
+lines(window(zIngresos),type = "o")
+
+```
+Comparamos los valores predichos con los valores reales.
+
+```{r}
+
+matrix(c(fingresos.ets$mean[1:cOmit],zIngresos[(nObs - cOmit + 1):nObs]),ncol = 2)
+
+```
+
+##### Precisión de la predicción
+
+```{r}
+
+etsfit <- ets(window(tsIngresos,end = 2016 + 3/4))
+
+fingresos.ets = forecast(etsfit,h = cOmit)
+
+forecast:::testaccuracy(fingresos.ets$mean,window(tsIngresos,start = 2017),test = NULL, d = NULL, D = NULL)
+
+```
+Los resultados muestran el error cuadrático medio bajo el título RMSE, el error de predicción en la columna MAPE y como 
+Theil's U, el coeficiente de incertidumbre.
+
+
+### Predicción con el modelo ARIMA
+
+Para realizar el modelo ARIMA tranformamos a logarítmico, en la gráfica se puede observar como la tranformación ha reducido la variabilidad.
+
+```{r ingresos log, echo = TRUE}
+
+zlIngresos = log(zIngresos)
+
+```
+
+```{r gr ingresos log}
+
+df_newl <- data.frame(value = as.vector(zlIngresos),
+                     time = time(zlIngresos))
+
+ggplot(df_newl) + geom_point(aes(x = time,y = value)) + geom_line(aes(x = time,y = value)) + ylab("Ingresos") + 
+          ggtitle("Ingresos Trimestrales LOG Apple") + xlab("Trimestres")
+
+```
+
+```{r}
+
+ggtsdisplay(zlIngresos)
+
+```
+
+En las gráfica superiores se aprecia el "ruido blanco", es decir, aquellas autocorrelaciones que tienen un valor estadístico de 0. Mientras que la primera muestra la autocorrelación total, la segunda muestra la autocorrelación parcial, que elimina el efecto indirecto.
+
+```{r}
+
+ggtsdisplay(diff(zlIngresos))
+
+```
+
+```{r}
+
+nObs = length(zIngresos)
+
+olIngresos <- window(zIngresos,start = index(zIngresos[1]),end = index(zIngresos[nObs - cOmit]))
+
+
+```
+
+
+```{r}
+
+fit1 = auto.arima(olIngresos,lambda = 0)
+
+summary(fit1)
+
+```
+El modelo ARIMA presenta un AIC de menos -39,45.
+
+Se muestra el "ruido blanco" del modelo.
+
+```{r}
+
+ggtsdisplay(fit1$residuals)
+
+```
+
+
+```{r}
+Box.test(fit1$residuals,lag = 4, fitdf = 3, type = "Lj")
+
+```
+
+
+```{r}
+
+fingresos.arima = forecast(fit1)
+
+ggplot(df_new) + geom_point(aes(x = time,y = value)) + geom_line(aes(x = time,y = value)) + 
+            geom_forecast(fingresos.arima,alpha = 0.4) + ggtitle("ARIMA: Predicción Apple")
+
+```
+
+
+
+```{r}
+
+fingresos.arima
+
+```
+
+
+
+
+
+
+
