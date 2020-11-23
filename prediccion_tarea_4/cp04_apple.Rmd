@@ -161,6 +161,10 @@ forecast:::testaccuracy(fingresos.ets$mean,window(tsIngresos,start = 2017),test 
 Los resultados muestran el error cuadrático medio bajo el título RMSE, el error de predicción en la columna MAPE y como 
 Theil's U, el coeficiente de incertidumbre.
 
+ME (error medio) si negativo modelo sesgado hacia infravalorar
+RMSE (error cuadrático medio) penanila la distancia d los errores
+MAPE 
+
 
 ### Predicción con el modelo ARIMA
 
@@ -228,7 +232,7 @@ ggtsdisplay(fit1$residuals)
 Box.test(fit1$residuals,lag = 4, fitdf = 3, type = "Lj")
 
 ```
-
+Box test: contraste de hipótesis sobre el ruido blanco.
 
 ```{r}
 

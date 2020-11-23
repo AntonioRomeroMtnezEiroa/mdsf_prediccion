@@ -1,0 +1,334 @@
+---
+title: "Colgate vs Crest"
+author: "Antonio Romero Mtnez-Eiroa"
+date: "19/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+### Carga de librerías
+
+Cargamos las librerias necesarias para realizar el trabajo.
+
+```{r, warning=FALSE, message=FALSE} 
+
+library(readxl)
+library(openxlsx)
+library(skimr)
+library(fpp2)
+library(ggplot2)
+library(zoo)
+library(ggfortify)
+library(tseries)
+library(forecast)
+library(xts)
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(TSA)
+library(Hmisc)
+library(astsa)
+library(tsoutliers)
+library(normtest)
+
+```
+
+
+### Carga de datos
+
+Importamos los datos desde un archivo en formato Excel.
+
+```{r}
+
+data <- read_excel('data.xlsx')
+
+```
+
+
+### Tratamiento de datos
+
+Añadimos una columna que reuna el año y la semana y eliminamos las dos columnas originales. 
+
+```{r}
+
+data$Date <- as.Date(paste(data$Year, data$Week, 1, sep = "-"), "%Y-%U-%u")
+data <- dplyr::select(data, -Year, -Week)
+
+```
+
+
+Realizamos un análisis previo de los datos.
+
+```{r, echo=FALSE}
+
+skim(data)
+
+```
+
+Dividimos el data frame en dos, uno para Colgate y otro para Crest miestras los convertimos en series temporales.
+
+```{r}
+
+xColgate <- ts(data$Colgate, start = 1958,frequency = 52)
+xCrest <- ts(data$Crest, start = 1958, frequency = 52)
+
+```
+
+Graficamos las series
+
+```{r, echo=FALSE}
+
+ggseasonplot(xColgate, month.labels = TRUE, month.labels.left = TRUE) +
+ylab("Cuota de mercado") +
+ggtitle("Seasonal plot: cuota de mercado COLGATE")
+
+ggseasonplot(xCrest, month.labels = TRUE, month.labels.left = TRUE) +
+ylab("Cuota de mercado") +
+ggtitle("Seasonal plot: cuota de mercado CREST")
+
+```
+
+Convertimos a formato zoo.
+
+```{r}
+
+zColgate <- as.zoo(xColgate)
+zCrest <- as.zoo(xCrest)
+
+
+```
+
+Observamos gráficamente ambas series.
+
+```{r , echo=FALSE}
+
+autoplot(zColgate) + ggtitle("Cuota de mercado") + xlab("Semana") + ylab("Colgate")
+autoplot(zCrest) + ggtitle("Cuota de mercado") + xlab("Semana") + ylab("Crest")
+
+```
+
+
+### Test de Dickey-Fuller
+
+Realizamos el test para comprobar la existencia de estacionariedad en las series.
+Del p-valor del resultado concluimos su existencia.
+
+```{r , echo=FALSE} 
+
+adf.test(zColgate)
+adf.test(zCrest)
+
+```
+
+
+### Selección de train y test
+
+```{r}
+
+cOmit = 16                            
+
+nObsColgate = length(zColgate)
+nObsCrest = length(zCrest)
+
+```
+
+```{r}
+
+trColgate <- window(zColgate, start = index(zColgate[1]),end = index(zColgate[nObsColgate - cOmit]))
+trCrest <- window(zCrest, star = index(zCrest[1]), end = index(zCrest[nObsCrest - cOmit]))
+
+```
+
+
+### Modelo ARIMA 
+
+Para obtener el modelo autilizaremos autoarima. Ya realiza automaticamente las transformaciones necesarias para hacer el modelo estacionario. Lo realizaremos con el train.
+
+
+```{r , echo=FALSE}
+
+fit_colgate <- auto.arima(trColgate) 
+summary(fit_colgate)
+
+                                                                     
+fit_crest <- auto.arima(trCrest)
+summary(fit_crest)
+
+```
+
+Obtememos como resultado para ambas series un modelo de orden (0,1,1) , lo que significa que no hay término autorregresivo, existe una diferencia regular y una media movil.
+
+
+
+#### Análisis de los residuos
+
+```{r , echo=FALSE}
+ggtsdisplay(fit_colgate$residuals,
+            main = "Residuos de ARIMA Colgate") 
+ggtsdisplay(fit_crest$residuals,
+            main = "Residuos de ARIMA Crest") 
+```
+
+
+### Test de Ljung–Box
+
+```{r , echo=FALSE}
+
+Box.test(fit_colgate$residuals,lag = 3, fitdf = 1, type = "Lj")
+
+Box.test(fit_crest$residuals,lag = 3, fitdf = 1, type = "Lj")
+
+```
+En los resultados del test ambos valores son superiores al nivel de significación, por lo que no se puede rechazar la hipótesis nula, esto significa que no se rechaza que las observaciones se distribuyan de forma independiente.
+
+
+### Predicción
+
+Calculamos los valores predichos para las 16 semanas de 1963 con la función `forecast`.
+
+```{r , echo=FALSE}
+
+pred_colgate = forecast(fit_colgate, h = 16)
+
+pred_crest = forecast(fit_crest, h = 16)
+
+```
+
+
+
+```{r , echo=FALSE}
+
+summary(pred_colgate)
+summary(pred_crest)
+
+```
+
+Graficamos el resultado de la predicción.
+
+```{r , echo=FALSE}
+
+dfColgate <- data.frame(value = as.vector(zColgate),
+                     time = time(zColgate))
+
+ggplot(dfColgate) + geom_line(aes(x = time,y = value)) + geom_forecast(pred_colgate,alpha = 0.4)
+
+```
+
+
+
+```{r , echo=FALSE}
+
+dfCrest <- data.frame(value = as.vector(zCrest),
+                     time = time(zCrest))
+
+ggplot(dfCrest) + geom_line(aes(x = time,y = value)) + geom_forecast(pred_crest,alpha = 0.4)
+
+```
+
+
+
+### Outliers
+
+Localizamos los outliers.
+
+Hay tres outliers aditivos en la serie de Crest, en la posicion 135 debido al comunicado del  Consejo de Terapéutica Dental de la American Dental Association, y en los puntos 136 y 138, muy próximos.
+
+
+```{r , echo=FALSE} 
+
+detectAO(fit_colgate) 
+detectAO(fit_crest) 
+
+detectIO(fit_colgate) 
+detectIO(fit_crest)
+
+```
+
+
+
+### ARIMAX
+
+```{r , echo=FALSE}
+
+arimax_colgate <- arimax(as.double(zColgate), 
+                         order = c(0,1,1),
+                         xtransf = data.frame(A60_step = 1*(seq(zColgate) ),
+                                              A60_pulse = 1*(seq(zColgate))),
+                         transfer = list(c(0,0), c(1,0)),
+                         method = "ML")
+arimax_colgate
+
+```
+
+```{r}
+
+arimax_crest <- arimax(as.double(zCrest), 
+                       order = c(0,1,1),
+                       xtransf = data.frame(A60_step = 1*(seq(zCrest) >= 135 ),
+                                            A60_pulse = 1*(seq(zCrest) )),
+                       xreg = data.frame(A60_3 = 1*(seq(zCrest) == 136),
+                                         A60_3 = 1*(seq(zCrest) == 138)),
+                       transfer = list(
+                         c(0,0),
+                         c(0,0)
+                       ),
+                       method = 'ML')
+arimax_crest
+
+```
+
+Calculamos de nuevo los outliers y comprobamos que ya no existen.
+
+```{r , echo=FALSE}
+
+detectAO(arimax_colgate) 
+detectIO(arimax_colgate) 
+
+detectAO(arimax_crest)
+detectIO(arimax_crest)
+
+```
+
+
+### Función de transferencia
+
+```{r , echo=FALSE}
+
+trans_colgate <- arimax(as.double(zColgate),
+                        order = c(0,1,1), 
+                        include.mean = TRUE,
+                        xtransf = zCrest, 
+                        transfer = list(c(0,0)), 
+                        method = "ML")
+trans_colgate
+
+summary(trans_colgate)
+
+```
+
+```{r , echo=FALSE}
+
+trans_crest <- arimax(as.double(zCrest),
+                        order = c(0,1,1), 
+                        include.mean = TRUE,
+                        xtransf = zColgate, 
+                        transfer = list(c(0,0)), 
+                        method = "ML")
+trans_crest
+
+summary(trans_crest)
+
+```
+
+
+
+
+
+
+
+
