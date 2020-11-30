@@ -1,0 +1,248 @@
+---
+title: "BMW vs Volkswagen"
+author: "Antonio Romero Martínez-Eiroa"
+date: "29/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+```
+
+### Cargamos las librerías
+
+```{r cars}
+
+library(quantmod) 
+library(forecast)
+library(fGarch)
+library(vars)
+
+```
+
+## Modelo GARCH
+
+
+### Test del multiplicador de Lagrange
+
+```{r pressure, echo=FALSE}
+
+archTest <- function(rtn,m=10){
+ 
+  y = (rtn - mean(rtn))^2
+  T = length(rtn)
+  atsq = y[(m + 1):T]
+  x = matrix(0,(T - m),m)
+  for (i in 1:m) {
+    x[,i] = y[(m + 1 - i):(T - i)]
+  }
+  md = lm(atsq~x)
+  summary(md)
+}
+
+```
+
+
+### Carga de los datos
+
+```{r}
+
+sSymbol = "BMW.DE"
+ 
+mData <- getSymbols(sSymbol ,from = "2014-01-01",to = "2020-01-01",auto.assign = FALSE)
+
+xData = Ad(mData)
+
+dRentCont = dailyReturn(xData,type = 'log',leading = FALSE)
+
+dRentCont = na.exclude(dRentCont)
+
+```
+
+
+### Gráfica de los datos
+
+```{r, echo=FALSE}
+
+plot.zoo(cbind(xData,dRentCont),main = paste(sSymbol," y  Rentabilidad"),xlab = "años",ylab = c("Precio","rentabilidad"))
+grid(lwd = 2)
+
+```
+
+
+
+### Volatilidad de GARP
+
+```{r, echo=FALSE}
+
+plot.zoo(cbind(Ad(mData),dRentCont,dRentCont^2),main = paste(sSymbol," y  Rentabilidad"),xlab = "años",
+         ylab = c("Precio","rentabilidad","Volatilidad"))
+
+```
+
+
+```{r}
+
+t.test(dRentCont)
+
+```
+
+
+```{r}
+
+VolProxy = dRentCont^2 
+
+```
+
+
+### Test de Ljung-Box  
+
+```{r}
+
+tsdisplay(VolProxy) 
+
+Box.test(VolProxy,lag = 10,  type = "Lj")
+Box.test(VolProxy,lag = 20,  type = "Lj")
+Box.test(VolProxy,lag = 40,  type = "Lj")
+
+
+archTest(dRentCont,20)
+
+```
+
+
+```{r}
+
+m1 = garchFit(~1+garch(1,0),data = dRentCont,trace = F) 
+summary(m1)
+resi = residuals(m1,standardize = T) 
+resi = xts(resi,order.by = index(dRentCont)) 
+tsdisplay(resi^2) 
+
+```
+
+
+```{r}
+
+m2 = garchFit(~1+garch(1,1),data = dRentCont,trace = F)
+summary(m2)
+
+```
+
+
+
+```{r}
+
+resi = residuals(m2,standardize = T)
+resi = xts(resi,order.by = index(dRentCont)) 
+tsdisplay(resi^2) 
+
+```
+
+
+```{r}
+
+m3 = garchFit(~1+garch(1,1),data = dRentCont,trace = F,cond.dist = "std")
+summary(m3)
+
+```
+
+
+```{r}
+
+v1 = volatility(m3)  
+v1 = xts(v1,order.by = index(dRentCont)) 
+plot(sqrt(252)*v1)
+
+```
+
+
+```{r}
+
+resi = residuals(m3,standardize = T) 
+resi = xts(resi,order.by = index(dRentCont)) 
+tsdisplay(resi^2) 
+plot(resi)
+
+```
+
+
+```{r}
+
+predict(m3)
+predict(m3, n.ahead = 10, plot = TRUE, crit_val = 2) 
+predict(m3,n.ahead = 20,plot = TRUE,conf = .9,nx = 100) 
+
+```
+
+
+## Modelo VAR
+
+
+
+```{r}
+
+bmw = getSymbols("BMW.DE",env = NULL)
+vol = getSymbols("VWAGY",env = NULL)
+
+```
+
+
+```{r}
+
+rbmw = monthlyReturn(bmw[,6])             
+rvol = monthlyReturn(vol[,6])
+
+```
+
+
+```{r}
+
+vY = cbind(rbmw,rvol)
+colnames(vY) = c("BMW","VOL")
+vY = na.omit(vY)
+
+```
+
+
+```{r}
+
+VARselect(vY)
+
+```
+
+
+```{r}
+
+model.var = VAR(vY)
+summary(model.var)
+model.var1 = VAR(vY,type = "none")
+summary(model.var1)
+
+```
+
+
+```{r}
+
+causality(model.var1)
+
+```
+
+
+```{r}
+
+model.ri = irf(model.var1)
+model.ri
+plot(model.ri)
+
+```
+
+
+```{r}
+
+predict(model.var1, n.ahead = 8, ci = 0.95) 
+
+```
+
